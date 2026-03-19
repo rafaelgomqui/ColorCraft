@@ -13,10 +13,9 @@ Aplicación web full-stack para crear, visualizar, guardar y exportar paletas de
 Debes crear un archivo `.env` en la ruta `/server/.env` con el siguiente formato:
 
 ```env
-DATABASE_URL="postgresql://user:password@host:port/dbname"
-JWT_SECRET="tu_secreto_super_seguro"
+JWT_SECRET="clave_secreta"
 PORT=3001
-GEMINI_API_KEY="tu_api_key_de_gemini"
+GEMINI_API_KEY="tu_api_key_de_gemini" (tiene plan gratuito)
 ```
 
 ## 🛠️ Instalación Local
@@ -30,13 +29,6 @@ GEMINI_API_KEY="tu_api_key_de_gemini"
    ```bash
    cd server
    npm install
-   ```
-
-3. Inicializar la Base de Datos (PostgreSQL):
-   ```bash
-   cd server
-   npx prisma db push
-   npx prisma generate
    ```
 
 ## 🏃 Ejecución
@@ -53,18 +45,4 @@ Para iniciar el proyecto en desarrollo:
    ```bash
    npm run dev
    ```
-   > El cliente se abrirá automáticamente en el puerto configurado (ej: 5173).
-
-## 📦 Despliegue
-
-### Frontend (Vercel)
-1. Conecta tu repositorio con Vercel.
-2. Configura el Framework Preset como **Vite**.
-3. El comando de build es `npm run build` y el Root Directory debe ser la raíz.
-
-### Backend (Render / Railway)
-1. Conecta la carpeta `/server` a un servicio web en Render.
-2. Comando de instalación: `npm install && npx prisma generate`.
-3. Comando de build: `npm run build`.
-4. Comando start: `npm start`.
-5. Asegúrate de añadir las variables de entorno en el panel del servidor.
+   > El cliente se abrirá automáticamente en el puerto configurado.
