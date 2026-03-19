@@ -1,0 +1,80 @@
+{
+  "auth": {
+    "login": "Sign In",
+    "register": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit",
+    "username": "Username",
+    "realName": "Full Name",
+    "usernameLabel": "Username",
+    "logout": "Logout"
+  },
+  "nav": {
+    "myPalettes": "My Palettes"
+  },
+  "editor": {
+    "title": "Palette Editor",
+    "generate": "Generate AI Palette",
+    "promptPlaceholder": "Describe your ideal palette..."
+  },
+  "home": {
+    "aiTitle": "Artificial Intelligence",
+    "aiDesc": "Describe any concept or emotion, and the AI will generate a perfect palette.",
+    "aiPlaceholder": "E.g.: Starry night in Tokyo",
+    "aiGenerating": "Generating...",
+    "aiButton": "Generate Magic Palette",
+    "saveTitle": "Save Project",
+    "savePlaceholderTitle": "Title",
+    "savePlaceholderDesc": "General description (Optional)",
+    "saving": "Saving...",
+    "saveButton": "Save Locally",
+    "viewLanding": "View Dynamic Landing",
+    "copyHex": "Copy HEX",
+    "alertLoginRequired": "You must sign in to save",
+    "alertNameRequired": "Please add a name for the palette",
+    "alertSaveSuccess": "Palette saved successfully!",
+    "alertSaveError": "Error saving palette",
+    "alertAiError": "Error generating palette with AI"
+  },
+  "preview": {
+    "title": "Design your next idea",
+    "subtitle": "See exactly how the selected visual hierarchies react on a real canvas, mapped in real time",
+    "backToEditor": "Back to Editor",
+    "themeMapping": "Theme Mapping",
+    "themeMappingDesc": "Assign colors to components",
+    "mapBackground": "Background Color",
+    "mapHeadings": "Main Text (Headings)",
+    "mapParagraphs": "Secondary Text (Paragraphs)",
+    "mapPrimary": "Primary Color (Buttons)",
+    "mapBorders": "Borders & Cards",
+    "heroButton": "Create Free Account",
+    "heroButtonSecondary": "Schedule a Demo",
+    "navHome": "Home",
+    "navFeatures": "Features",
+    "navPricing": "Pricing",
+    "navAbout": "About",
+    "getStarted": "Get Started",
+    "feature1Title": "Infinite Security",
+    "feature1Desc": "Text and backgrounds collide in harmony thanks to these exact assignments.",
+    "feature2Title": "Absolute Performance",
+    "feature2Desc": "Notice how the secondary color subtly highlights the structural borders.",
+    "feature3Title": "Adaptive Design",
+    "feature3Desc": "Each interactive card reacts using the Primary Color in the accents."
+  },
+  "dashboard": {
+    "title": "My Saved Palettes",
+    "empty": "You don't have any saved palettes yet.",
+    "createFirst": "Create my first palette",
+    "editInEditor": "Edit in Editor",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this palette?",
+    "deleteError": "Error deleting palette"
+  },
+  "colorWheel": {
+    "captureScreen": "Capture from screen",
+    "eyedropperNotSupported": "Your browser does not support the screen eyedropper (Use Edge/Chrome).",
+    "mainOrb": "Main",
+    "secondaryOrb": "Secondary"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "submit": "Enviar",
+    "username": "Usuario",
+    "realName": "Nombre Real",
+    "usernameLabel": "Nombre de Usuario",
+    "logout": "Salir"
+  },
+  "nav": {
+    "myPalettes": "Mis Paletas"
+  },
+  "editor": {
+    "title": "Editor de Paletas",
+    "generate": "Generar paleta con IA",
+    "promptPlaceholder": "Describe tu paleta ideal..."
+  },
+  "home": {
+    "aiTitle": "Inteligencia Artificial",
+    "aiDesc": "Describe cualquier concepto o emoción, y la IA generará una paleta perfecta.",
+    "aiPlaceholder": "Ej: Noche estrellada en Tokio",
+    "aiGenerating": "Generando...",
+    "aiButton": "Generar Paleta Mágica",
+    "saveTitle": "Guardar Proyecto",
+    "savePlaceholderTitle": "Título",
+    "savePlaceholderDesc": "Descripción general (Opcional)",
+    "saving": "Guardando...",
+    "saveButton": "Guardar Localmente",
+    "viewLanding": "Ver Landing Dinámica",
+    "copyHex": "Copiar HEX",
+    "alertLoginRequired": "Debes iniciar sesión para guardar",
+    "alertNameRequired": "Por favor añade un nombre para la paleta",
+    "alertSaveSuccess": "¡Paleta guardada exitosamente!",
+    "alertSaveError": "Error guardando paleta",
+    "alertAiError": "Error generando paleta con IA"
+  },
+  "preview": {
+    "title": "Diseña tu próxima idea",
+    "subtitle": "Comprueba exactamente cómo reaccionan las jerarquías visuales seleccionadas sobre un canvas real, mapeado en tiempo real",
+    "backToEditor": "Volver al Editor",
+    "themeMapping": "Mapeo de Tema",
+    "themeMappingDesc": "Asigna colores a componentes",
+    "mapBackground": "Color de Fondo (Background)",
+    "mapHeadings": "Texto Principal (Headings)",
+    "mapParagraphs": "Texto Secundario (Párrafos)",
+    "mapPrimary": "Color Primario (Botones)",
+    "mapBorders": "Bordes y Tarjetas",
+    "heroButton": "Crear Cuenta Gratis",
+    "heroButtonSecondary": "Agendar una Demo",
+    "navHome": "Inicio",
+    "navFeatures": "Características",
+    "navPricing": "Precios",
+    "navAbout": "Acerca de",
+    "getStarted": "Comenzar",
+    "feature1Title": "Seguridad Infinita",
+    "feature1Desc": "Los textos y fondos colisionan en armonía gracias a estas asignaciones exactas.",
+    "feature2Title": "Rendimiento Absoluto",
+    "feature2Desc": "Puedes notar como el color secundario resalta sutilmente los bordes estructurales.",
+    "feature3Title": "Diseño Adaptativo",
+    "feature3Desc": "Cada cuadro interactivo reacciona usando el Color Primario en los acentos."
+  },
+  "dashboard": {
+    "title": "Mis Paletas Guardadas",
+    "empty": "Aún no tienes paletas guardadas.",
+    "createFirst": "Crear mi primera paleta",
+    "editInEditor": "Editar en Editor",
+    "delete": "Eliminar",
+    "confirmDelete": "¿Seguro que quieres eliminar esta paleta?",
+    "deleteError": "Error al eliminar"
+  },
+  "colorWheel": {
+    "captureScreen": "Capturar de la pantalla",
+    "eyedropperNotSupported": "Tu navegador no soporta el cuentagotas de pantalla (Usa Edge/Chrome).",
+    "mainOrb": "Principal",
+    "secondaryOrb": "Secundario"
+  }
+}

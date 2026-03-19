@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  nombre    String
+  correo    String    @unique
+  usuario   String    @unique
+  password  String
+  googleId  String?   @unique
+  palettes  Palette[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Palette {
+  id        String   @id @default(uuid())
+  name      String
+  colors    String   // JSON string field format
+  format    String   @default("HEX")
+  notes     String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
