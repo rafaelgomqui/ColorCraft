@@ -1,4 +1,4 @@
-# 🎨 ColorPal (ColorCraft)
+# 🎨 ColorCraft
 
 Aplicación web full-stack para crear, visualizar, guardar y exportar paletas de colores. Integra generación de paletas mediante Inteligencia Artificial (Google Gemini) y ofrece una previsualización en vivo (Landing Page dinámica) aplicando las paletas de color.
 
