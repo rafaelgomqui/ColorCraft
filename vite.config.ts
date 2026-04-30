@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001', // Tu servidor de backend
+        target: 'https://colorcraft-back.onrender.com', // Tu servidor de backend
         changeOrigin: true,
       },
     }

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { LoginFormData, RegisterFormData, AuthResponse, User } from '../types/auth';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://colorcraft-back.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
