@@ -225,8 +225,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Inicializar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
   console.log(`Base de datos: ${process.env.DB_NAME}`);
   console.log(`JWT Secret: ${process.env.JWT_SECRET ? 'Configurado' : 'NO CONFIGURADO'}`);
 });
