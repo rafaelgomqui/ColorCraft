@@ -122,27 +122,28 @@ export default function Layout({ children }: LayoutProps) {
       `}</style>
 
       {/* Navigation */}
-      <nav className="relative z-50 p-4">
+      <nav className="relative z-50 p-3 md:p-4">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/10 shadow-xl">
-            <div className="flex items-center justify-between p-4">
-              {/* Left side - Menu */}
-              <div className="flex items-center gap-4">
+          <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-xl md:rounded-2xl border border-white/20 dark:border-white/10 shadow-xl">
+            <div className="flex items-center justify-between p-3 md:p-4">
+              {/* Left side - Brand */}
+              <div className="flex items-center gap-3">
                 <Link to="/" className="flex items-center gap-2 text-white font-semibold">
-                  <Palette className="w-6 h-6" />
-                  <span className="text-lg">ColorCraft</span>
+                  <Palette className="w-5 h-5 md:w-6 md:h-6" />
+                  <span className="text-base md:text-lg">ColorCraft</span>
                 </Link>
               </div>
 
               {/* Right side - Controls */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 {/* Language Toggle */}
                 <button 
                   onClick={toggleLanguage}
-                  className="text-white hover:bg-white/10 gap-2 flex items-center px-3 py-2 rounded-md transition-colors"
+                  className="text-white hover:bg-white/10 flex items-center gap-1 px-2 md:px-3 py-2 rounded-md transition-colors"
                 >
                   <Globe className="w-4 h-4" />
-                  {language === 'es' ? '🇪🇸' : '🇬🇧'}
+                  <span className="hidden sm:inline">{language === 'es' ? '🇪🇸' : '🇬🇧'}</span>
+                  <span className="sm:hidden text-xs">{language === 'es' ? '🇪🇸' : '🇬🇧'}</span>
                 </button>
 
                 {/* Theme Toggle */}
@@ -185,7 +186,7 @@ export default function Layout({ children }: LayoutProps) {
                 ) : (
                   <button 
                     onClick={handleLogin}
-                    className="text-white hover:bg-white/10 px-3 py-2 rounded-md transition-colors"
+                    className="text-white hover:bg-white/10 px-2 md:px-3 py-2 rounded-md transition-colors text-sm"
                   >
                     {t.login}
                   </button>

@@ -9,12 +9,29 @@ const HARMONY_OFFSETS = [-60, -30, 30, 60, 180];
 export default function ColorWheel() {
   const { t } = useTranslation();
   const { colors, setColors, updateColor } = usePaletteStore();
-  const radius = 180;
+  
+  const containerRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
+  const [radius, setRadius] = useState(160);
   
   const internalHsvRef = useRef(colors.map(c => colord(c).toHsv()));
-  
   const [activeOrb, setActiveOrb] = useState<number | null>(null);
+
+  // Recalculate radius based on container size
+  useEffect(() => {
+    const updateRadius = () => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.offsetWidth;
+      // Use 85% of container width / 2, clamped between 100 and 220
+      const newRadius = Math.min(Math.max(Math.floor((containerWidth * 0.85) / 2), 100), 220);
+      setRadius(newRadius);
+    };
+
+    updateRadius();
+    const observer = new ResizeObserver(updateRadius);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (activeOrb === null) {
@@ -89,7 +106,7 @@ export default function ColorWheel() {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [activeOrb, colors, setColors, updateColor]);
+  }, [activeOrb, colors, radius, setColors, updateColor]);
 
   const openEyedropper = async () => {
     if (!('EyeDropper' in window)) {
@@ -117,12 +134,19 @@ export default function ColorWheel() {
     } catch (e) { }
   };
 
+  // Orb size scales with wheel radius
+  const orbSize = Math.max(28, Math.floor(radius * 0.22));
+  const mainOrbSize = Math.max(36, Math.floor(radius * 0.28));
+
   return (
-    <div className="flex flex-col items-center gap-6 w-full">
-      <div className="relative w-full max-w-[500px] h-[500px] bg-zinc-100 dark:bg-zinc-900 rounded-3xl overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-zinc-800 shadow-inner">
+    <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
+      <div
+        className="relative w-full bg-zinc-100 dark:bg-zinc-900 rounded-3xl overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-zinc-800 shadow-inner"
+        style={{ height: radius * 2 + 64 }}
+      >
         <div 
           ref={wheelRef}
-          className="relative rounded-full shadow-2xl transition-transform"
+          className="relative rounded-full shadow-2xl transition-transform flex-shrink-0"
           style={{
             width: radius * 2,
             height: radius * 2,
@@ -159,9 +183,11 @@ export default function ColorWheel() {
             return (
               <div
                 key={`orb-${index}`}
-                className="absolute w-10 h-10 rounded-full shadow-md border-2 border-white dark:border-zinc-900 cursor-grab active:cursor-grabbing hover:scale-110"
+                className="absolute rounded-full shadow-md border-2 border-white dark:border-zinc-900 cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
                 style={{ 
-                  backgroundColor: color, 
+                  backgroundColor: color,
+                  width: orbSize,
+                  height: orbSize,
                   left: `calc(50% + ${coords.x}px)`, 
                   top: `calc(50% + ${coords.y}px)`,
                   transform: 'translate(-50%, -50%)',
@@ -177,9 +203,11 @@ export default function ColorWheel() {
           })}
 
           <div
-            className="absolute w-14 h-14 rounded-full shadow-2xl border-4 border-white dark:border-zinc-950 cursor-grab active:cursor-grabbing hover:scale-105"
+            className="absolute rounded-full shadow-2xl border-4 border-white dark:border-zinc-950 cursor-grab active:cursor-grabbing hover:scale-105 transition-transform"
             style={{ 
-              backgroundColor: colors[0], 
+              backgroundColor: colors[0],
+              width: mainOrbSize,
+              height: mainOrbSize,
               left: `calc(50% + ${getColorCoords(0).x}px)`, 
               top: `calc(50% + ${getColorCoords(0).y}px)`,
               transform: 'translate(-50%, -50%)',
@@ -201,9 +229,9 @@ export default function ColorWheel() {
       <div className="flex gap-4">
         <button 
           onClick={openEyedropper}
-          className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-sm hover:shadow-md transition text-sm font-medium hover:text-indigo-500"
+          className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-sm hover:shadow-md transition text-sm font-medium hover:text-indigo-500"
         >
-          <Pipette className="w-5 h-5" />
+          <Pipette className="w-4 h-4" />
           {t('colorWheel.captureScreen')}
         </button>
       </div>
