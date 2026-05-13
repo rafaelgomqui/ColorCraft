@@ -17,7 +17,11 @@ function generateAnalogous(baseH: number, baseS: number, baseV: number): HsvColo
     { h: (baseH + 30) % 360, s: baseS, v: baseV, a: 1 },
     { h: (baseH - 30 + 360) % 360, s: clamp(baseS * 0.75, 0, 100), v: baseV, a: 1 },
     { h: (baseH + 30) % 360, s: clamp(baseS * 0.75, 0, 100), v: baseV, a: 1 },
+<<<<<<< HEAD
     { h: baseH, s: baseS, v: baseV, a: 1 },
+=======
+    { h: baseH, s: baseS, v: clamp(baseV * 0.75, 0, 100), a: 1 },
+>>>>>>> 9cfaac5adfa0fea6e8f4f12364bbc96448e8e7f8
   ];
 }
 

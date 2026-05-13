@@ -14,8 +14,9 @@ Debes crear un archivo `.env` en la ruta `/server/.env` con el siguiente formato
 
 ```env
 JWT_SECRET="clave_secreta"
+DATABASE_URL="file:./dev.db"
 PORT=3001
-GEMINI_API_KEY="tu_api_key_de_gemini" (tiene plan gratuito)
+GEMINI_API_KEY="tu_api_key_de_gemini"
 ```
 
 ## 🛠️ Instalación Local
