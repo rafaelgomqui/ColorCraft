@@ -1,78 +1,176 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { colord } from 'colord';
 import { usePaletteStore } from '../../stores/usePaletteStore';
 import { Pipette } from 'lucide-react';
 
-const HARMONY_OFFSETS = [-60, -30, 30, 60, 180];
+
+type HsvColor = { h: number; s: number; v: number; a: number };
+type HistoryState = { colors: string[]; globalValue: number };
+
+const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
+
+function generateAnalogous(baseH: number, baseS: number, baseV: number): HsvColor[] {
+  return [
+    { h: baseH, s: baseS, v: baseV, a: 1 },
+    { h: (baseH - 30 + 360) % 360, s: baseS, v: baseV, a: 1 },
+    { h: (baseH + 30) % 360, s: baseS, v: baseV, a: 1 },
+    { h: (baseH - 30 + 360) % 360, s: clamp(baseS * 0.75, 0, 100), v: baseV, a: 1 },
+    { h: (baseH + 30) % 360, s: clamp(baseS * 0.75, 0, 100), v: baseV, a: 1 },
+    { h: baseH, s: baseS, v: baseV, a: 1 },
+  ];
+}
 
 export default function ColorWheel() {
   const { t } = useTranslation();
-  const { colors, setColors, updateColor } = usePaletteStore();
+  const { colors, setColors } = usePaletteStore();
+
+  const [globalValue, setGlobalValue] = useState(100);
+  const [activeOrb, setActiveOrb] = useState<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
+  const internalHsvRef = useRef<HsvColor[]>([]);
   const [radius, setRadius] = useState(160);
 
-  // Keep refs so pointer handlers never have stale closures
-  const radiusRef = useRef(radius);
+  /* ── Historial (Undo / Redo) ── */
+  const historyRef = useRef<HistoryState[]>([]);
+  const historyIndexRef = useRef(-1);
   const colorsRef = useRef(colors);
-  const setColorsRef = useRef(setColors);
-  const updateColorRef = useRef(updateColor);
+  const globalValueRef = useRef(globalValue);
+  colorsRef.current = colors;
+  globalValueRef.current = globalValue;
 
-  useEffect(() => { radiusRef.current = radius; }, [radius]);
-  useEffect(() => { colorsRef.current = colors; }, [colors]);
-  useEffect(() => { setColorsRef.current = setColors; }, [setColors]);
-  useEffect(() => { updateColorRef.current = updateColor; }, [updateColor]);
-
-  const internalHsvRef = useRef(colors.map(c => colord(c).toHsv()));
-  const activeOrbRef = useRef<number | null>(null);
-  const [activeOrb, setActiveOrb] = useState<number | null>(null);
-
-  // Recalculate radius based on container size
-  useEffect(() => {
-    const updateRadius = () => {
-      if (!containerRef.current) return;
-      const containerWidth = containerRef.current.offsetWidth;
-      const newRadius = Math.min(Math.max(Math.floor((containerWidth * 0.85) / 2), 100), 220);
-      setRadius(newRadius);
+  const pushHistory = useCallback(() => {
+    const current: HistoryState = {
+      colors: [...colorsRef.current],
+      globalValue: globalValueRef.current,
     };
-    updateRadius();
-    const observer = new ResizeObserver(updateRadius);
-    if (containerRef.current) observer.observe(containerRef.current);
+
+    // Evitar duplicados consecutivos
+    const last = historyRef.current[historyRef.current.length - 1];
+    if (last && JSON.stringify(last) === JSON.stringify(current)) {
+      return;
+    }
+
+    // Si estamos en medio del historial (se hizo undo antes), truncar el futuro
+    if (historyIndexRef.current < historyRef.current.length - 1) {
+      historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    }
+
+    historyRef.current.push(current);
+    if (historyRef.current.length > 20) {
+      historyRef.current.shift();
+    }
+    historyIndexRef.current = historyRef.current.length - 1;
+  }, []);
+
+  const undo = useCallback(() => {
+    if (historyIndexRef.current > 0) {
+      historyIndexRef.current--;
+      const state = historyRef.current[historyIndexRef.current];
+      setColors(state.colors);
+      setGlobalValue(state.globalValue);
+      internalHsvRef.current = state.colors.map((c) => {
+        const parsed = colord(c).toHsv();
+        return { h: parsed.h, s: parsed.s, v: parsed.v, a: parsed.a ?? 1 };
+      });
+    }
+  }, [setColors]);
+
+  const redo = useCallback(() => {
+    if (historyIndexRef.current < historyRef.current.length - 1) {
+      historyIndexRef.current++;
+      const state = historyRef.current[historyIndexRef.current];
+      setColors(state.colors);
+      setGlobalValue(state.globalValue);
+      internalHsvRef.current = state.colors.map((c) => {
+        const parsed = colord(c).toHsv();
+        return { h: parsed.h, s: parsed.s, v: parsed.v, a: parsed.a ?? 1 };
+      });
+    }
+  }, [setColors]);
+
+  // Inicializar historial al montar
+  useEffect(() => {
+    if (historyRef.current.length === 0) {
+      pushHistory();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Atajos de teclado
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        } else if (
+          e.key.toLowerCase() === 'y' ||
+          (e.key.toLowerCase() === 'z' && e.shiftKey)
+        ) {
+          e.preventDefault();
+          redo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
+  /* ── Sincronización store ↔ ref interno ── */
+  useEffect(() => {
+    if (activeOrb === null) {
+      const newHsvs = colors.map((c, i) => {
+        const parsed = colord(c).toHsv();
+        if (parsed.s === 0) {
+          return {
+            ...parsed,
+            h: internalHsvRef.current[i]?.h ?? 0,
+            a: parsed.a ?? 1,
+          };
+        }
+        return { h: parsed.h, s: parsed.s, v: parsed.v, a: parsed.a ?? 1 };
+      });
+      internalHsvRef.current = newHsvs;
+      const avgV = newHsvs.reduce((sum, hsv) => sum + hsv.v, 0) / newHsvs.length || 100;
+      setGlobalValue(avgV);
+    }
+  }, [colors, activeOrb]);
+
+  /* ── Responsive: radio dinámico ── */
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const size = Math.min(entry.contentRect.width, entry.contentRect.height);
+        setRadius(Math.max(120, Math.floor(size / 2) - 12));
+      }
+    });
+    observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
 
-  // Sync internal HSV when colors change from outside (e.g. AI generation)
-  useEffect(() => {
-    if (activeOrbRef.current === null) {
-      internalHsvRef.current = colors.map((c, i) => {
-        const parsed = colord(c).toHsv();
-        if (parsed.s === 0) return { ...parsed, h: internalHsvRef.current[i]?.h ?? 0 };
-        return parsed;
-      });
-    }
-  }, [colors]);
+  /* ── Conversión HSV ↔ coordenadas cartesianas ── */
+  const getColorCoords = useCallback(
+    (index: number) => {
+      const hsv = internalHsvRef.current[index];
+      if (!hsv) return { x: 0, y: 0 };
+      const angle = ((hsv.h - 90) * Math.PI) / 180;
+      const distance = (hsv.s / 100) * radius;
+      return {
+        x: Math.cos(angle) * distance,
+        y: Math.sin(angle) * distance,
+      };
+    },
+    [radius]
+  );
 
-  const getColorCoords = (index: number) => {
-    const hsv = internalHsvRef.current[index];
-    const r = radiusRef.current;
-    const angle = ((hsv.h - 90) * Math.PI) / 180;
-    const distance = (hsv.s / 100) * r;
-    return {
-      x: Math.cos(angle) * distance,
-      y: Math.sin(angle) * distance
-    };
-  };
-
-  // Register global pointer handlers ONCE — use refs to avoid stale closures
+  /* ── Drag & Drop (Pointer Events) ── */
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
-      const orb = activeOrbRef.current;
-      if (orb === null || !wheelRef.current) return;
-
-      // Prevent browser from scrolling while dragging
-      e.preventDefault();
+      if (activeOrb === null || !wheelRef.current) return;
 
       const rect = wheelRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -81,64 +179,63 @@ export default function ColorWheel() {
       const x = e.clientX - centerX;
       const y = e.clientY - centerY;
 
-      const r = radiusRef.current;
       let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
       if (angle < 0) angle += 360;
+      if (angle >= 360) angle -= 360;
 
       let distance = Math.sqrt(x * x + y * y);
-      if (distance > r) distance = r;
-      const s = (distance / r) * 100;
+      if (distance > radius) distance = radius;
+      const s = (distance / radius) * 100;
 
-      const currentColors = colorsRef.current;
+      if (activeOrb === 0) {
+        internalHsvRef.current[0] = { h: angle, s, v: globalValue, a: 1 };
+        const harmonyColors = generateAnalogous(angle, s, globalValue);
 
-      if (orb === 0) {
-        internalHsvRef.current[0] = { h: angle, s, v: 100, a: 1 };
-        const newMainHex = colord({ h: angle, s, v: 100, a: 1 }).toHex();
-
-        const newColors = currentColors.map((_, idx) => {
-          if (idx === 0) return newMainHex;
-          let newH = (angle + HARMONY_OFFSETS[idx - 1]) % 360;
-          if (newH < 0) newH += 360;
-          internalHsvRef.current[idx] = { h: newH, s, v: 100, a: 1 };
-          return colord({ h: newH, s, v: 100, a: 1 }).toHex();
+        const newColors = colors.map((_, idx) => {
+          internalHsvRef.current[idx] = harmonyColors[idx];
+          return colord(harmonyColors[idx]).toHex();
         });
-
-        setColorsRef.current(newColors);
+        setColors(newColors);
       } else {
-        internalHsvRef.current[orb] = { h: angle, s, v: 100, a: 1 };
-        const newHex = colord({ h: angle, s, v: 100, a: 1 }).toHex();
-        updateColorRef.current(orb, newHex);
+        internalHsvRef.current[activeOrb] = { h: angle, s, v: globalValue, a: 1 };
+        const newHex = colord({ h: angle, s, v: globalValue, a: 1 }).toHex();
+        const newColors = [...colors];
+        newColors[activeOrb] = newHex;
+        setColors(newColors);
       }
     };
 
     const handlePointerUp = () => {
-      if (activeOrbRef.current !== null) {
-        activeOrbRef.current = null;
-        setActiveOrb(null);
+      if (activeOrb !== null) {
+        pushHistory();
       }
+      setActiveOrb(null);
     };
 
-    // passive: false is REQUIRED so we can call e.preventDefault() on mobile
-    window.addEventListener('pointermove', handlePointerMove, { passive: false });
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
-
+    if (activeOrb !== null) {
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+    }
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, []); // Empty deps — never re-registers, uses refs for all mutable values
+  }, [activeOrb, colors, setColors, radius, globalValue, pushHistory]);
 
-  const startDrag = (e: React.PointerEvent, index: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Capture pointer on the element so it keeps tracking even if finger moves off
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    activeOrbRef.current = index;
-    setActiveOrb(index);
+  /* ── Cambio de Brillo (Value) global ── */
+  const handleValueChange = (newValue: number) => {
+    setGlobalValue(newValue);
+    const newColors = colors.map((_, i) => {
+      const hsv = internalHsvRef.current[i];
+      if (!hsv) return colors[i];
+      const newHsv = { ...hsv, v: newValue };
+      internalHsvRef.current[i] = newHsv;
+      return colord(newHsv).toHex();
+    });
+    setColors(newColors);
   };
 
+  /* ── EyeDropper ── */
   const openEyedropper = async () => {
     if (!('EyeDropper' in window)) {
       alert(t('colorWheel.eyedropperNotSupported'));
@@ -148,129 +245,174 @@ export default function ColorWheel() {
       // @ts-ignore
       const eyeDropper = new window.EyeDropper();
       const result = await eyeDropper.open();
+
       const parsed = colord(result.sRGBHex).toHsv();
-      const newMainHex = colord({ h: parsed.h, s: parsed.s, v: 100, a: 1 }).toHex();
-      internalHsvRef.current[0] = { h: parsed.h, s: parsed.s, v: 100, a: 1 };
+      setGlobalValue(parsed.v);
+
+      internalHsvRef.current[0] = { h: parsed.h, s: parsed.s, v: parsed.v, a: 1 };
+      const harmonyColors = generateAnalogous(parsed.h, parsed.s, parsed.v);
+
       const newColors = colors.map((_, idx) => {
-        if (idx === 0) return newMainHex;
-        let newH = (parsed.h + HARMONY_OFFSETS[idx - 1]) % 360;
-        if (newH < 0) newH += 360;
-        internalHsvRef.current[idx] = { h: newH, s: parsed.s, v: 100, a: 1 };
-        return colord({ h: newH, s: parsed.s, v: 100, a: 1 }).toHex();
+        internalHsvRef.current[idx] = harmonyColors[idx];
+        return colord(harmonyColors[idx]).toHex();
       });
       setColors(newColors);
-    } catch (_) {}
+      pushHistory();
+    } catch (e) {
+      /* usuario canceló */
+    }
   };
 
-  const orbSize = Math.max(28, Math.floor(radius * 0.22));
-  const mainOrbSize = Math.max(36, Math.floor(radius * 0.28));
+  /* ── Render helpers ── */
+  const orbSize = Math.max(22, Math.min(36, radius / 5.5));
+  const mainOrbSize = Math.max(30, Math.min(48, radius / 4));
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
+    <div className="flex flex-col items-center gap-5 w-full select-none">
+      {/* ── Rueda cromática ── */}
       <div
-        className="relative w-full bg-zinc-100 dark:bg-zinc-900 rounded-3xl overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-zinc-800 shadow-inner"
-        style={{ height: radius * 2 + 64 }}
+        ref={containerRef}
+        className="relative w-full max-w-[340px] aspect-square flex-shrink-0 mx-auto"
       >
         <div
           ref={wheelRef}
-          className="relative rounded-full shadow-2xl flex-shrink-0"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-2xl"
           style={{
             width: radius * 2,
             height: radius * 2,
-            background: 'conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red)',
-            // Prevent browser scroll/pan from stealing touch events
             touchAction: 'none',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
+            /* 0° HSV (rojo) en la parte superior, recorrido horario */
+            background:
+              'conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red)',
           }}
         >
-          {/* White radial overlay (saturation gradient) */}
+          {/* Gradiente radial de saturación (blanco → transparente) */}
           <div
+            className="absolute inset-0 rounded-full pointer-events-none"
             style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
               background: 'radial-gradient(circle, #ffffff 0%, transparent 100%)',
-              pointerEvents: 'none',
             }}
           />
 
-          {/* Lines from center to each orb */}
+          {/* Overlay de Value (Brillo) */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              backgroundColor: 'black',
+              opacity: (100 - globalValue) / 100,
+            }}
+          />
+
+          {/* Líneas desde el centro a cada orbe */}
           <svg
-            className="absolute inset-0 w-full h-full overflow-visible"
-            style={{ pointerEvents: 'none' }}
+            className="absolute inset-0 pointer-events-none"
+            width={radius * 2}
+            height={radius * 2}
           >
             {colors.map((_, i) => {
-              const coords = getColorCoords(i);
+              const c = getColorCoords(i);
               return (
                 <line
                   key={`line-${i}`}
                   x1={radius}
                   y1={radius}
-                  x2={radius + coords.x}
-                  y2={radius + coords.y}
-                  stroke="rgba(0,0,0,0.3)"
-                  strokeWidth="2"
+                  x2={radius + c.x}
+                  y2={radius + c.y}
+                  stroke="rgba(0,0,0,0.25)"
+                  strokeWidth="1.5"
                 />
               );
             })}
           </svg>
 
-          {/* Secondary orbs */}
+          {/* Orbes secundarios */}
           {colors.slice(1).map((color, i) => {
             const index = i + 1;
             const coords = getColorCoords(index);
             return (
               <div
                 key={`orb-${index}`}
-                className="absolute rounded-full shadow-md border-2 border-white dark:border-zinc-900"
+                className="absolute cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
                 style={{
-                  backgroundColor: color,
-                  width: orbSize,
-                  height: orbSize,
                   left: `calc(50% + ${coords.x}px)`,
                   top: `calc(50% + ${coords.y}px)`,
                   transform: 'translate(-50%, -50%)',
                   zIndex: activeOrb === index ? 50 : 10,
-                  cursor: activeOrb === index ? 'grabbing' : 'grab',
-                  touchAction: 'none',
+                  width: orbSize,
+                  height: orbSize,
                 }}
-                onPointerDown={(e) => startDrag(e, index)}
-                title={`${t('colorWheel.secondaryOrb')}: ${color}`}
-              />
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+                  setActiveOrb(index);
+                }}
+              >
+                <div
+                  className="w-full h-full rounded-full shadow-md border-2 border-white dark:border-zinc-900"
+                  style={{ backgroundColor: color }}
+                />
+              </div>
             );
           })}
 
-          {/* Main orb */}
+          {/* Orbe principal */}
           <div
-            className="absolute rounded-full shadow-2xl border-4 border-white dark:border-zinc-950"
+            className="absolute cursor-grab active:cursor-grabbing hover:scale-105 transition-transform"
             style={{
-              backgroundColor: colors[0],
-              width: mainOrbSize,
-              height: mainOrbSize,
               left: `calc(50% + ${getColorCoords(0).x}px)`,
               top: `calc(50% + ${getColorCoords(0).y}px)`,
               transform: 'translate(-50%, -50%)',
               zIndex: activeOrb === 0 ? 50 : 20,
-              cursor: activeOrb === 0 ? 'grabbing' : 'grab',
-              touchAction: 'none',
+              width: mainOrbSize,
+              height: mainOrbSize,
             }}
-            onPointerDown={(e) => startDrag(e, 0)}
-            title={`${t('colorWheel.mainOrb')}: ${colors[0]}`}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+              setActiveOrb(0);
+            }}
           >
-            <div className="w-full h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40 rounded-full pointer-events-none">
-              <span className="text-white text-[10px] font-bold drop-shadow-md">
-                {t('colorWheel.mainOrb')}
-              </span>
-            </div>
+            <div
+              className="w-full h-full rounded-full shadow-2xl border-[3px] border-white dark:border-zinc-950"
+              style={{ backgroundColor: colors[0] }}
+            />
           </div>
         </div>
       </div>
 
-      <div className="flex gap-4">
+      {/* ── Controles debajo de la rueda ── */}
+      <div className="flex flex-col gap-4 w-full max-w-[340px] px-2">
+        {/* Slider de Value (Brillo) */}
+        <div className="flex flex-col gap-1.5 w-full">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              {t('colorWheel.value')}
+            </span>
+            <span className="text-xs font-mono text-zinc-600 dark:text-zinc-300">
+              {Math.round(globalValue)}%
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={globalValue}
+            onChange={(e) => handleValueChange(Number(e.target.value))}
+            onPointerUp={pushHistory}
+            className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+          />
+          <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
+            <span>0</span>
+            <span>50</span>
+            <span>100</span>
+          </div>
+        </div>
+
+        {/* Cuentagotas */}
         <button
           onClick={openEyedropper}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-sm hover:shadow-md transition text-sm font-medium hover:text-indigo-500"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-sm hover:shadow-md transition text-sm font-medium hover:text-indigo-500 w-full"
         >
           <Pipette className="w-4 h-4" />
           {t('colorWheel.captureScreen')}

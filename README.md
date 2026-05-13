@@ -5,8 +5,8 @@ Aplicación web full-stack para crear, visualizar, guardar y exportar paletas de
 ## 🚀 Tecnologías
 
 - **Frontend**: React 19, Vite, TypeScript, Tailwind CSS, Zustand, react-i18next, Framer Motion.
-- **Backend**: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL, JWT.
-- **IA**: Google Gemini 1.5-flash.
+- **Backend**: Node.js, Express, TypeScript, Prisma ORM, SQLite, JWT.
+- **IA**: Google Gemini 2.5-flash.
 
 ## ⚙️ Configuración del Entorno (.env)
 
