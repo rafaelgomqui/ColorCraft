@@ -17,7 +17,7 @@ function generateAnalogous(baseH: number, baseS: number, baseV: number): HsvColo
     { h: (baseH + 30) % 360, s: baseS, v: baseV, a: 1 },
     { h: (baseH - 30 + 360) % 360, s: clamp(baseS * 0.75, 0, 100), v: baseV, a: 1 },
     { h: (baseH + 30) % 360, s: clamp(baseS * 0.75, 0, 100), v: baseV, a: 1 },
-    { h: baseH, s: baseS, v: baseV, a: 1 },
+    { h: baseH, s: baseS, v: clamp(baseV * 0.75, 0, 100), a: 1 },
   ];
 }
 
@@ -134,8 +134,6 @@ export default function ColorWheel() {
         return { h: parsed.h, s: parsed.s, v: parsed.v, a: parsed.a ?? 1 };
       });
       internalHsvRef.current = newHsvs;
-      const avgV = newHsvs.reduce((sum, hsv) => sum + hsv.v, 0) / newHsvs.length || 100;
-      setGlobalValue(avgV);
     }
   }, [colors, activeOrb]);
 
@@ -228,7 +226,9 @@ export default function ColorWheel() {
     const newColors = colors.map((_, i) => {
       const hsv = internalHsvRef.current[i];
       if (!hsv) return colors[i];
-      const newHsv = { ...hsv, v: newValue };
+      // El último orbe (índice 5) siempre conserva el 75 % del brillo global
+      const targetV = i === 5 ? clamp(newValue * 0.75, 0, 100) : newValue;
+      const newHsv = { ...hsv, v: targetV };
       internalHsvRef.current[i] = newHsv;
       return colord(newHsv).toHex();
     });
