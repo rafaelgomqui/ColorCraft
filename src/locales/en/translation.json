@@ -74,7 +74,6 @@
   "colorWheel": {
     "captureScreen": "Capture from screen",
     "eyedropperNotSupported": "Your browser does not support the screen eyedropper (Use Edge/Chrome).",
-    "value": "Brightness",
     "mainOrb": "Main",
     "secondaryOrb": "Secondary"
   }
