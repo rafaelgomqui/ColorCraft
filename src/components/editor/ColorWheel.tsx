@@ -207,6 +207,7 @@ export default function ColorWheel() {
           {t('colorWheel.captureScreen')}
         </button>
       </div>
+      <p>hola soy rafael</p>
     </div>
   );
 }
