@@ -206,8 +206,5 @@ export default function ColorWheel() {
           <Pipette className="w-5 h-5" />
           {t('colorWheel.captureScreen')}
         </button>
-      </div>
-      <p>hola soy rafael</p>
-    </div>
   );
 }
